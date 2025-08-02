@@ -39,7 +39,7 @@ export default function UAPage() {
         {/* Footer */}
         <div className="border-t border-slate-200 bg-slate-50 px-6 py-3 text-center">
           <p className="text-xs text-slate-500">
-            Powered by <span className="font-mono text-slate-700">ua-parser-js</span> & Tailwind CSS
+            Powered by <span className="font-mono text-slate-700">zhangyulin.cn</span>
           </p>
         </div>
       </div>
