@@ -3,23 +3,10 @@
  * @author Liam Zhang
  */
 
-'use client';
-
-import { useEffect, useState } from 'react';
-import { UAParser } from 'ua-parser-js';
-import JsonView from 'react-json-view';
-
-type UAResult = ReturnType<UAParser['getResult']>;
+// app/ua/page.tsx
+import JsonViewClient from './JsonViewClient'; // 这个组件是客户端的
 
 export default function UAPage() {
-  const [uaResult, setUaResult] = useState<UAResult | null>(null);
-
-  useEffect(() => {
-    const parser = new UAParser();
-    const result = parser.getResult();
-    setUaResult(result);
-  }, []);
-
   const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
 
   return (
@@ -46,30 +33,13 @@ export default function UAPage() {
         {/* JSON View */}
         <div className="p-6">
           <h2 className="mb-4 text-lg font-semibold text-slate-700">📊 详细解析结果</h2>
-          {uaResult ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-1 shadow-inner">
-              <JsonView
-                src={uaResult}
-                theme="rjv-default"
-                style={{ background: 'transparent', fontSize: '13px' }}
-                collapsed={2}
-                enableClipboard
-                displayObjectSize
-                displayDataTypes={false}
-              />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center py-8">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-slate-600"></div>
-              <span className="ml-3 text-slate-600">加载中...</span>
-            </div>
-          )}
+          <JsonViewClient />
         </div>
 
         {/* Footer */}
         <div className="border-t border-slate-200 bg-slate-50 px-6 py-3 text-center">
           <p className="text-xs text-slate-500">
-            Powered by <span className="font-mono text-slate-700">zhangyulin.cn</span>
+            Powered by <span className="font-mono text-slate-700">ua-parser-js</span> & Tailwind CSS
           </p>
         </div>
       </div>
