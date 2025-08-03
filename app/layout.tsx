@@ -15,6 +15,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ZhangYuLin",
   description: "nothing...",
+  //   viewport: {
+  //     width: 'device-width',
+  //     initialScale: 1,
+  //     maximumScale: 1, // 🔒 禁止用户放大
+  //     userScalable: false, // 🔒 禁止缩放
+  //     viewportFit: 'cover',
+  // },
 };
 
 export default function RootLayout({
@@ -26,6 +33,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={{minWidth: 375}}
       >
         {children}
       </body>
