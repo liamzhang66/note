@@ -2,12 +2,80 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+// 否则可以直接写在本文件内
+
+// 如果不单独建文件，可以把接口写在这里：
+interface DiagnosticData {
+  timestamp: string;
+  isIOS: boolean;
+  isAndroid: boolean;
+  iosVersion: string | null;
+  devicePixelRatio: number;
+  reportedDPR: number;
+  viewport: {
+    innerWidth: number;
+    innerHeight: number;
+    visualViewportScale: number;
+  };
+  screen: {
+    width: number;
+    height: number;
+  };
+  layout: {
+    documentScrollWidth: number;
+    bodyClientWidth: number;
+    isContentOverflow: boolean;
+  };
+  metaViewport: string | null;
+  text: {
+    smallestInputFont: number;
+    prefersLargeText: boolean;
+  };
+  environment: {
+    href: string;
+    referrer: string;
+  };
+  warnings: string[];
+}
+
+// 工具函数：判断警告
+function getWarnings(data: {
+  visualViewportScale: number;
+  isContentOverflow: boolean;
+  smallestInputFont: number;
+  metaContent: string | null;
+  isIOS: boolean;
+}): string[] {
+  const warns: string[] = [];
+
+  if (data.visualViewportScale > 1.1) {
+    warns.push(`⚠️ 页面已被放大（缩放级别: ${data.visualViewportScale.toFixed(2)}）`);
+  }
+
+  if (!data.metaContent || !data.metaContent.includes('width=device-width')) {
+    warns.push('❌ 缺少或无效的 meta viewport 标签');
+  }
+
+  if (data.isContentOverflow) {
+    warns.push('⚠️ 页面内容超出视口，可能触发自动缩放');
+  }
+
+  if (data.isIOS && data.smallestInputFont < 16 && data.smallestInputFont > 0) {
+    warns.push(`⚠️ iOS 设备：输入框字体 ${data.smallestInputFont}px < 16px，可能触发自动放大`);
+  }
+
+  if (data.isIOS && data.visualViewportScale > 1.3 && data.smallestInputFont < 16) {
+    warns.push('ℹ️ 检测到可能启用了“更大字体”辅助功能');
+  }
+
+  return warns;
+}
 
 export default function DiagnosticInfo() {
-  const [diagnosis, setDiagnosis] = useState<any>(null);
+  const [diagnosis, setDiagnosis] = useState<DiagnosticData | null>(null);
 
   useEffect(() => {
-    const checkDiagnosis = () => {
+    const checkDiagnosis = (): DiagnosticData => {
       const ua = navigator.userAgent;
       const isIOS = /iPad|iPhone|iPod/.test(ua);
       const isAndroid = /Android/.test(ua);
@@ -16,26 +84,28 @@ export default function DiagnosticInfo() {
       const meta = document.querySelector('meta[name="viewport"]');
       const metaContent = meta ? meta.getAttribute('content') : null;
 
-      // 2. visual viewport（关键！判断是否缩放）
+      // 2. visual viewport 缩放
       const visualViewportScale = 'visualViewport' in window ? window.visualViewport?.scale || 1 : 1;
 
       // 3. 内容是否溢出
       const documentWidth = document.documentElement.scrollWidth;
       const viewportWidth = window.innerWidth;
-      const isContentOverflow = documentWidth > viewportWidth * 1.05; // 容差 5%
+      const isContentOverflow = documentWidth > viewportWidth * 1.05;
 
-      // 4. 检查最小 input 字体（iOS 会放大 <16px 的输入框）
+      // 4. 最小 input 字体
       let smallestInputFont = Infinity;
       const inputs = document.querySelectorAll('input, textarea');
       inputs.forEach((el) => {
         const style = window.getComputedStyle(el);
         const fontSize = parseFloat(style.fontSize);
-        if (fontSize < smallestInputFont) smallestInputFont = fontSize;
+        if (!isNaN(fontSize) && fontSize < smallestInputFont) {
+          smallestInputFont = fontSize;
+        }
       });
       if (smallestInputFont === Infinity) smallestInputFont = 0;
 
-      // 5. iOS 版本提取
-      let iosVersion = null;
+      // 5. iOS 版本
+      let iosVersion: string | null = null;
       if (isIOS) {
         const match = ua.match(/OS (\d+)_(\d+)_?(\d*)/);
         if (match) {
@@ -43,10 +113,11 @@ export default function DiagnosticInfo() {
         }
       }
 
-      // 6. 辅助功能启发式：如果页面被放大且字体很小，可能是“更大字体”模式
+      // 6. 辅助功能判断
       const prefersLargeText = isIOS && visualViewportScale > 1.3 && smallestInputFont < 16;
 
-      return {
+      // 构造诊断数据（类型安全）
+      const data: DiagnosticData = {
         timestamp: new Date().toISOString(),
         isIOS,
         isAndroid,
@@ -56,7 +127,7 @@ export default function DiagnosticInfo() {
         viewport: {
           innerWidth: window.innerWidth,
           innerHeight: window.innerHeight,
-          visualViewportScale, // 1.0 = 正常，>1.0 = 被放大
+          visualViewportScale,
         },
         screen: {
           width: screen.width,
@@ -84,32 +155,8 @@ export default function DiagnosticInfo() {
           isIOS,
         }),
       };
-    };
 
-    const getWarnings = (data: any) => {
-      const warns = [];
-
-      if (data.visualViewportScale > 1.1) {
-        warns.push('⚠️ 页面已被放大（缩放级别: ' + data.visualViewportScale.toFixed(2) + '）');
-      }
-
-      if (!data.metaContent || !data.metaContent.includes('width=device-width')) {
-        warns.push('❌ 缺少或无效的 meta viewport 标签');
-      }
-
-      if (data.isContentOverflow) {
-        warns.push('⚠️ 页面内容超出视口，可能触发自动缩放');
-      }
-
-      if (data.isIOS && typeof data.smallestInputFont === 'number' && data.smallestInputFont < 16) {
-        warns.push(`⚠️ iOS 设备：输入框字体 ${data.smallestInputFont}px < 16px，可能触发自动放大`);
-      }
-
-      if (data.prefersLargeText) {
-        warns.push('ℹ️ 检测到可能启用了“更大字体”辅助功能');
-      }
-
-      return warns;
+      return data;
     };
 
     const update = () => setDiagnosis(checkDiagnosis());
@@ -143,7 +190,7 @@ export default function DiagnosticInfo() {
         <div className="rounded-lg bg-red-50 border border-red-200 p-4">
           <h3 className="text-sm font-bold text-red-800 mb-2">🚨 检测到潜在问题</h3>
           <ul className="text-sm text-red-700 space-y-1">
-            {diagnosis.warnings.map((w: string, i: number) => (
+            {diagnosis.warnings.map((w, i) => (
               <li key={i}>{w}</li>
             ))}
           </ul>
@@ -157,7 +204,9 @@ export default function DiagnosticInfo() {
           <p className="mt-1 text-lg font-mono text-slate-900">
             ×{diagnosis.viewport.visualViewportScale.toFixed(2)}
           </p>
-          <p className="mt-1 text-xs text-slate-500">{diagnosis.viewport.visualViewportScale > 1.1 ? '被放大' : '正常'}</p>
+          <p className="mt-1 text-xs text-slate-500">
+            {diagnosis.viewport.visualViewportScale > 1.1 ? '被放大' : '正常'}
+          </p>
         </div>
 
         {/* meta viewport */}
