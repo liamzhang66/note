@@ -4,6 +4,8 @@
  */
 
 // app/ua/page.tsx
+import DeviceInfoSummary from './DeviceInfoSummary';
+import DiagnosticInfo from './DiagnosticInfo';
 import JsonViewClient from './JsonViewClient'; // 这个组件是客户端的
 
 export default function UAPage() {
@@ -30,9 +32,21 @@ export default function UAPage() {
           </p>
         </div>
 
+        {/* 新增：设备信息摘要 */}
+        <div className="border-b border-slate-200 bg-white px-6 py-6">
+          <h2 className="mb-4 text-lg font-semibold text-slate-700">📱 设备与屏幕信息</h2>
+          <DeviceInfoSummary />
+        </div>
+
+        {/* 新增：设备信息摘要 */}
+        <div className="border-b border-slate-200 bg-white px-6 py-6">
+          <h2 className="mb-4 text-lg font-semibold text-slate-700">📱 内容见擦</h2>
+          <DiagnosticInfo />
+        </div>
+
         {/* JSON View */}
         <div className="p-6">
-          <h2 className="mb-4 text-lg font-semibold text-slate-700">📊 详细解析结果</h2>
+          <h2 className="mb-4 text-lg font-semibold text-slate-700">📊 UA详细解析结果</h2>
           <JsonViewClient />
         </div>
 
